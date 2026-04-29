@@ -1,0 +1,9 @@
+pandas>=2.0
+openpyxl
+xlrd
+pyarrow
+matplotlib
+seaborn
+requests
+python-dotenv
+tqdm
