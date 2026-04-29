@@ -1,6 +1,6 @@
 # 공공 실거래가 아파트 상승률 분석
 
-국토교통부 아파트 매매 실거래가 공공 API를 활용하여 **특정 시기별 아파트 가격 상승률**을 비교·분석하는 프로젝트입니다.
+국토교통부 아파트 매매 실거래가 공공 API를 활용하여 **특정 시기별 아파트 가격 상승률**을 비교·분석한 프로젝트입니다.
 
 ## 분석 대상 지역
 
@@ -35,120 +35,51 @@
 
 ---
 
-## 필요한 API 키
+## 데이터 출처
 
-이 프로젝트를 실행하려면 아래 API 키가 필요합니다.
-
-### 1. 국토교통부 아파트 매매 실거래가 상세 자료 API (필수)
-
-아파트 실거래 데이터를 가져오는 핵심 API입니다.
+### 국토교통부 아파트 매매 실거래가 상세 자료 API
 
 - **발급처**: [공공데이터포털 (data.go.kr)](https://www.data.go.kr/data/15057511/openapi.do)
 - **API명**: `국토교통부_아파트매매 실거래 상세 자료`
 - **Endpoint**: `RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev`
-- **환경변수명**: `MOLIT_APT_TRADE_DETAIL_API_KEY`
 
-**발급 방법:**
+**API 키 발급 방법:**
 1. [공공데이터포털](https://www.data.go.kr/) 회원가입 및 로그인
 2. 위 링크에서 "활용신청" 클릭
-3. 신청 후 마이페이지에서 **일반 인증키(Encoding)** 복사
-4. `.env` 파일에 추가
+3. 신청 후 마이페이지 > 데이터활용 > 오픈API에서 **일반 인증키(Encoding)** 복사
 
-### 2. 네이버 클라우드 플랫폼 Geocoding API (선택)
+**주요 요청 파라미터:**
 
-건물 주소를 위경도 좌표로 변환하여 역세권 판정에 사용합니다. 지오코딩이 필요 없으면 `--skip-geocode` 옵션으로 건너뛸 수 있습니다.
+| 파라미터 | 설명 | 예시 |
+|----------|------|------|
+| `serviceKey` | 공공데이터포털 인증키 | 발급받은 키 |
+| `LAWD_CD` | 법정동코드 (5자리) | `41135` (분당구) |
+| `DEAL_YMD` | 계약년월 (6자리) | `202204` |
+| `pageNo` | 페이지 번호 | `1` |
+| `numOfRows` | 한 페이지 결과 수 | `1000` |
 
-- **발급처**: [네이버 클라우드 플랫폼](https://www.ncloud.com/product/applicationService/maps)
-- **API명**: Maps > Geocoding
-- **환경변수명**: `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`
-
-**발급 방법:**
-1. [네이버 클라우드 플랫폼](https://www.ncloud.com/) 회원가입 및 로그인
-2. 콘솔 > AI·Application Service > Maps 에서 애플리케이션 등록
-3. Geocoding 서비스 활성화
-4. Client ID와 Client Secret을 `.env` 파일에 추가
-
----
-
-## 설치 및 실행
-
-### 1. 저장소 클론
-
-```bash
-git clone https://github.com/seungyoon-lee29/apt-price-growth-analysis.git
-cd apt-price-growth-analysis
-```
-
-### 2. Python 환경 설정
-
-Python 3.10 이상을 권장합니다.
-
-```bash
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-### 3. 환경변수 설정
-
-프로젝트 루트에 `.env` 파일을 생성합니다:
-
-```env
-MOLIT_APT_TRADE_DETAIL_API_KEY=여기에_공공데이터포털_인증키_붙여넣기
-NAVER_CLIENT_ID=여기에_네이버_클라이언트_ID
-NAVER_CLIENT_SECRET=여기에_네이버_클라이언트_시크릿
-```
-
-### 4. 파이프라인 실행
-
-```bash
-# 전체 파이프라인 실행
-python pipeline.py
-
-# 지오코딩 건너뛰기 (네이버 API 없을 때)
-python pipeline.py --skip-geocode
-```
-
-### 5. 스모크 테스트
-
-API 호출 없이 mock 데이터로 파이프라인 로직을 검증합니다:
-
-```bash
-python smoke_test.py
-```
+**응답 형식:** XML
 
 ---
 
 ## 프로젝트 구조
 
 ```
-├── config.py              # 상수, 권역 분류, 세그먼트 기준 정의
-├── fetch_molit.py         # 국토부 실거래가 API 호출 및 XML 파싱
-├── fetch_subway.py        # 지하철역 좌표 데이터 로드
-├── geocode.py             # 네이버 Geocoding API (주소→좌표 변환, 캐시)
-├── load_csv.py            # CSV 데이터 로드 유틸리티
-├── enrich.py              # 세그먼트 부착 (연차/면적/권역/역세권)
-├── screen.py              # 가격 추이, 수익률 산출, 저평가 탐지
-├── visualize.py           # 차트 생성 (matplotlib)
-├── pipeline.py            # 메인 파이프라인 (오피스텔 스크리닝)
-├── analyze_seoul_trends.py # 서울 오피스텔 월별 추이 분석
-├── smoke_test.py          # mock 데이터 기반 스모크 테스트
-├── requirements.txt       # Python 의존성
-├── geocode_cache.csv      # 지오코딩 결과 캐시
-├── BUNDANG_APT_GROWTH_HANDOFF.md  # 분석 결과 요약 문서
+├── BUNDANG_APT_GROWTH_HANDOFF.md  # 전체 분석 과정 및 결과 요약 문서
+├── README.md
 └── output/
-    └── reports/           # 분석 결과 CSV 파일들
+    └── reports/                   # 분석 결과 CSV 파일들
 ```
 
 ## 출력 파일 설명
 
-`output/reports/` 디렉토리에 분석 결과가 CSV로 저장됩니다.
+`output/reports/` 디렉토리에 분석 결과가 CSV로 저장되어 있습니다.
 
 ### 분당구
 
 | 파일명 패턴 | 내용 |
 |------------|------|
-| `bundang_apt_trades_policy_windows_*.csv` | 원본 거래 데이터 (전체/주상복합 제외/제외된 거래) |
+| `bundang_apt_trades_policy_windows_*.csv` | 원본 거래 데이터 (전체 / 주상복합 제외 / 제외된 거래) |
 | `bundang_apt_growth_*_by_dong_*.csv` | 동별 상승률 |
 | `bundang_apt_growth_*_by_apt_*.csv` | 단지별 상승률 |
 | `bundang_apt_growth_*_by_apt_avg_volume_*.csv` | 평균 거래량 이상 단지만 필터링한 상승률 |
@@ -171,25 +102,40 @@ python smoke_test.py
 
 ---
 
-## 의존성
+## 주요 분석 결과 요약
 
-| 패키지 | 용도 |
-|--------|------|
-| pandas | 데이터 처리 |
-| requests | API 호출 |
-| python-dotenv | 환경변수 로드 (.env) |
-| matplotlib / seaborn | 차트 생성 |
-| openpyxl / xlrd | Excel 파일 입출력 |
-| pyarrow | Parquet 캐시 저장 |
-| tqdm | 진행률 표시 |
+자세한 결과는 [`BUNDANG_APT_GROWTH_HANDOFF.md`](BUNDANG_APT_GROWTH_HANDOFF.md)에 정리되어 있습니다.
+
+### 분당구 (주상복합 제외, 3개월 윈도우)
+
+**기간 1 (2017→2022) 동별 상승률:**
+
+| 동 | 상승률 |
+|----|--------|
+| 금곡동 | +148.48% |
+| 이매동 | +143.31% |
+| 분당동 | +132.13% |
+| 수내동 | +131.07% |
+| 서현동 | +126.92% |
+
+**기간 2 (2025→현재) 동별 상승률:**
+
+| 동 | 상승률 |
+|----|--------|
+| 정자동 | +57.46% |
+| 분당동 | +54.82% |
+| 구미동 | +49.60% |
+| 서현동 | +40.84% |
+| 야탑동 | +34.42% |
 
 ---
 
 ## 주의사항
 
-- 공공데이터포털 API는 **일일 호출 횟수 제한**이 있습니다. 대량 수집 시 캐시를 활용하세요.
+- 공공데이터포털 API는 **일일 호출 횟수 제한**이 있습니다. 대량 수집 시 페이지네이션과 캐싱을 구현하세요.
 - 거래량이 적은 단지/기간은 중위값이 불안정할 수 있으므로, 결과 해석 시 반드시 `base_count`, `end_count` 등 거래 건수를 함께 확인하세요.
-- 주상복합 제외 리스트는 기사 및 매물 정보 기반의 보수적 기준이며, 공식 분류가 아닙니다.
+- 주상복합 제외 리스트는 기사 및 매물 정보 기반의 보수적 기준이며, 국토부 API에 주상복합 여부 필드가 없으므로 공식 분류가 아닙니다.
+- API 응답은 XML 형식이며, 월별로 페이지네이션하여 전체 데이터를 수집해야 합니다.
 
 ## 라이선스
 
